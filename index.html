@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biglietto da Visita</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0d1117;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .scene {
+      width: 380px;
+      height: 220px;
+      perspective: 1000px;
+      cursor: grab;
+      user-select: none;
+      position: relative;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.05s linear;
+      border-radius: 18px;
+    }
+
+    .face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    .front {
+      background: linear-gradient(135deg, #0EA5E9 0%, #1D4ED8 100%);
+    }
+
+    .back {
+      background: linear-gradient(135deg, #0EA5E9 0%, #1D4ED8 100%);
+      transform: rotateY(180deg);
+    }
+
+    /* ── Fronte ── */
+    .front-inner {
+      padding: 24px 28px;
+      height: 100%;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(125,211,252,0.33);
+      flex-shrink: 0;
+      background: rgba(125,211,252,0.13);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+    }
+
+    .front-info { flex: 1; }
+
+    .front-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 4px;
+    }
+
+    .front-role {
+      font-size: 13px;
+      color: #7dd3fc;
+      margin-bottom: 12px;
+    }
+
+    .divider {
+      width: 36px;
+      height: 1px;
+      background: rgba(125,211,252,0.27);
+      margin-bottom: 12px;
+    }
+
+    .front-motto {
+      font-size: 12px;
+      color: #8b9ab1;
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    /* ── Retro ── */
+    .back-inner {
+      padding: 18px 28px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .back-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(125,211,252,0.13);
+    }
+
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .contact-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .contact-row a {
+      font-size: 12px;
+      color: #7dd3fc;
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-row a:hover { text-decoration: underline; }
+
+    /* ── Freccia animata ──
+       Posizionata sul lato DESTRO del biglietto.
+       In portrait, il wrapper è ruotato 90°, quindi il lato destro
+       diventa automaticamente il basso dello schermo: nessun override necessario. */
+    .flip-hint {
+      position: absolute;
+      right: -38px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: hintFadeOut 0.4s ease 2.2s forwards;
+      pointer-events: none;
+    }
+
+    .flip-arrow {
+      width: 22px;
+      height: 22px;
+      animation: arrowBounce 0.6s ease-in-out infinite alternate;
+    }
+
+    .flip-arrow svg { width: 100%; height: 100%; }
+
+    @keyframes arrowBounce {
+      from { transform: translateX(0px); opacity: 0.5; }
+      to   { transform: translateX(6px); opacity: 1; }
+    }
+
+    @keyframes hintFadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; visibility: hidden; }
+    }
+
+    /* ── Portrait mobile ── */
+    @media (max-width: 600px) and (orientation: portrait) {
+      body { justify-content: center; overflow: hidden; }
+
+      .wrapper {
+        transform: rotate(90deg);
+        transform-origin: center center;
+        width: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .scene {
+        width: 85vh;
+        height: 48vh;
+      }
+      /* .flip-hint NON viene sovrascritto:
+         il rotate(90deg) del wrapper fa sì che "destra del biglietto"
+         diventi automaticamente "basso dello schermo",
+         e la freccia punta già nella direzione corretta. */
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrapper" id="wrapper">
+    <div class="scene" id="scene">
+      <div class="card" id="card">
+
+        <!-- FRONTE -->
+        <div class="face front">
+          <div class="front-inner">
+            <!-- Per usare una foto: <img class="avatar" src="foto.jpg" alt="Foto profilo" /> -->
+            <div class="avatar"><img class="avatar" src="profilo.jpg" alt="Foto profilo" /></div>
+            <div class="front-info">
+              <div class="front-name">Riccardo Santarelli</div>
+              <div class="front-role">Cantapoeta</div>
+              <div class="divider"></div>
+              <div class="front-motto">"Il tuo motto personale o professionale va qui"</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RETRO -->
+        <div class="face back">
+          <div class="back-inner">
+            <div class="back-title">Contatta Nome Cognome</div>
+            <div class="contact-row">
+              <div class="contact-icon" style="background:rgba(125,211,252,0.13);">📞</div>
+              <a href="tel:+390000000000">+39 000 000 0000</a>
+            </div>
+            <div class="contact-row">
+              <div class="contact-icon" style="background:rgba(125,211,252,0.13);">✉️</div>
+              <a href="mailto:nome@email.com">nome@email.com</a>
+            </div>
+            <div class="contact-row">
+              <div class="contact-icon" style="background:rgba(225,48,108,0.13);">📸</div>
+              <a href="https://instagram.com/tuoprofilo" target="_blank">@tuoprofilo</a>
+            </div>
+            <div class="contact-row">
+              <div class="contact-icon" style="background:rgba(24,119,242,0.13);">👤</div>
+              <a href="https://facebook.com/tuoprofilo" target="_blank">facebook.com/tuoprofilo</a>
+            </div>
+            <div class="contact-row">
+              <div class="contact-icon" style="background:rgba(37,211,102,0.13);">💬</div>
+              <a href="https://wa.me/390000000000" target="_blank">WhatsApp</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Freccia flip hint — lato destro del biglietto -->
+      <div class="flip-hint" id="flipHint">
+        <div class="flip-arrow">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const scene = document.getElementById('scene');
+    const card  = document.getElementById('card');
+
+    let isDragging  = false;
+    let startPos    = 0;
+    let currentRotY = 0;
+    let baseRotY    = 0;
+
+    function isPortrait() {
+      return window.matchMedia('(max-width: 600px) and (orientation: portrait)').matches;
+    }
+
+    function getDragAxis(e) {
+      if (e.touches) {
+        return isPortrait() ? e.touches[0].clientY : e.touches[0].clientX;
+      }
+      return isPortrait() ? e.clientY : e.clientX;
+    }
+
+    scene.addEventListener('mousedown', e => {
+      isDragging = true;
+      startPos   = getDragAxis(e);
+      baseRotY   = currentRotY;
+      scene.style.cursor = 'grabbing';
+    });
+
+    scene.addEventListener('touchstart', e => {
+      isDragging = true;
+      startPos   = getDragAxis(e);
+      baseRotY   = currentRotY;
+    }, { passive: true });
+
+    window.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      const delta = (getDragAxis(e) - startPos) * 0.7;
+      currentRotY = baseRotY + delta;
+      card.style.transition = 'transform 0.05s linear';
+      card.style.transform  = 'rotateY(' + currentRotY + 'deg)';
+    });
+
+    window.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      const delta = (getDragAxis(e) - startPos) * 0.7;
+      currentRotY = baseRotY + delta;
+      card.style.transform = 'rotateY(' + currentRotY + 'deg)';
+    }, { passive: true });
+
+    function snapCard() {
+      if (!isDragging) return;
+      isDragging = false;
+      scene.style.cursor = 'grab';
+      const norm = ((currentRotY % 360) + 360) % 360;
+      const snap = (norm < 90 || norm >= 270)
+        ? Math.round(currentRotY / 360) * 360
+        : Math.round(currentRotY / 180) * 180;
+      card.style.transition = 'transform 0.4s cubic-bezier(.25,.8,.25,1)';
+      card.style.transform  = 'rotateY(' + snap + 'deg)';
+      currentRotY = snap;
+    }
+
+    window.addEventListener('mouseup',  snapCard);
+    window.addEventListener('touchend', snapCard);
+  </script>
+
+</body>
+</html>
