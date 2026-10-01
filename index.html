@@ -160,7 +160,7 @@
        diventa automaticamente il basso dello schermo: nessun override necessario. */
     .flip-hint {
       position: absolute;
-      right: -38px;
+      right: 20;
       top: 50%;
       transform: translateY(-50%);
       display: flex;
@@ -283,7 +283,7 @@
     let baseRotY    = 0;
 
     function isPortrait() {
-      return window.matchMedia('(max-width: 600px) and (orientation: portrait)').matches;
+      return false;
     }
 
     function getDragAxis(e) {
